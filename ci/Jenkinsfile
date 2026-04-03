@@ -1,0 +1,78 @@
+// Jenkins Pipeline
+
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME    = 'infra-platform'
+        DOCKER_REGISTRY = 'your-dockerhub-username' // 👈 update this
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        // ✅ Fix #3: Lint before Test for faster feedback on simple errors
+        stage('Lint') {
+            steps {
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install flake8
+                    flake8 app/ --max-line-length=120
+                '''
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh '''
+                    # ✅ Fix #1: Clean venv to avoid stale state
+                    rm -rf venv
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install -r app/sample-app/requirements.txt
+                    # ✅ Fix #2: Use python3 consistently, output JUnit XML
+                    python3 -m pytest tests/ -v --junitxml=test-results.xml
+                '''
+            }
+            post {
+                always {
+                    // ✅ Fix #6: Publish test results to Jenkins UI
+                    junit 'test-results.xml'
+                }
+            }
+        }
+
+        stage('Build') {
+            when { branch 'main' }
+            steps {
+                // ✅ Fix #4 & #5: Tag image with registry prefix so push works
+                sh "docker build -t ${DOCKER_REGISTRY}/${APP_NAME}:${BUILD_NUMBER} ."
+            }
+        }
+
+        stage('Push') {
+            when { branch 'main' }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                    sh "echo $PASS | docker login -u $USER --password-stdin"
+                    // ✅ Fix #5: Consistent image name with registry prefix
+                    sh "docker push ${DOCKER_REGISTRY}/${APP_NAME}:${BUILD_NUMBER}"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
