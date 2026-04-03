@@ -1,7 +1,5 @@
-<<<<<<< HEAD
-# infra-platform-project
+# Infra-platform-project
 =======
-# infra-platform
 
 
 ## DevOps Stack Overview
@@ -53,5 +51,3 @@ infra-platform/
 
 ## License
 
-MIT
->>>>>>> 9a70acd (initial commit)
