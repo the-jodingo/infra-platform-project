@@ -31,8 +31,7 @@ jobs:
         run: flake8 app/ --max-line-length=120
 
       - name: Test
-        working-directory: app/sample-app
-        run: pytest ../../tests/ -v
+        run: pytest tests/ -v
 
   terraform:
     name: Terraform validate
