@@ -1,8 +1,45 @@
-# AWS VPC Configuration
+# AWS VPC + EKS configuration
+
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+variable "aws_region" {
+  description = "AWS region to deploy into"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+  default     = "dev"
+}
+
+variable "project_name" {
+  description = "Project name used for resource naming and tags"
+  type        = string
+  default     = "infra-platform"
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
-  enable_dns_hostname = true
+  enable_dns_hostnames = true
   enable_dns_support   = true
   
   tags = {
